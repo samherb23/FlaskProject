@@ -1,15 +1,71 @@
 from flask import Flask, request
+from flasgger import Swagger, swag_from
 import requests
+import os
 
 app = Flask(__name__)
+
+# Swagger Configuration
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": "apispec_1",
+            "route": "/apispec_1.json",
+            "rule_filter": lambda rule: True,  # All API routes
+            "model_filter": lambda tag: True,  # All models
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/swagger/",
+}
+
+swagger_template = {
+    "info": {
+        "title": "Company Data API",
+        "description": "API for fetching financial data and analyzing company performance.",
+        "version": "1.0.0",
+    },
+    "host": os.getenv("HOST", "127.0.0.1:5000"),
+    "basePath": "/",
+}
+
+swagger = Swagger(app, config=swagger_config, template=swagger_template)
 
 # Home route
 @app.route("/")
 def home():
+    """
+    Welcome endpoint
+    ---
+    responses:
+      200:
+        description: Welcome message
+    """
     return "Welcome to the Company Data API!"
 
 # Route to fetch live financial data
 @app.route("/fetch_live_data", methods=["POST"])
+@swag_from({
+    "responses": {
+        200: {
+            "description": "JSON response with financial data",
+        },
+        400: {
+            "description": "Bad request (missing or invalid parameters)",
+        },
+    },
+    "parameters": [
+        {
+            "name": "symbol",
+            "in": "body",
+            "type": "string",
+            "required": True,
+            "description": "The stock symbol (e.g., AAPL for Apple Inc.)",
+        },
+    ],
+})
 def fetch_live_data():
     data = request.json
     if not data or "symbol" not in data:
@@ -30,6 +86,25 @@ def fetch_live_data():
 
 # Route to fetch SEC 10-K filings
 @app.route("/fetch_10k_filing", methods=["POST"])
+@swag_from({
+    "responses": {
+        200: {
+            "description": "Fetch 10-K filings for a company with 10-K filing URLs",
+        },
+        400: {
+            "description": "Bad request (missing or invalid parameters)",
+        },
+    },
+    "parameters": [
+        {
+            "name": "cik",
+            "in": "body",
+            "type": "string",
+            "required": True,
+            "description": "The Central Index Key (CIK) for the company",
+        },
+    ],
+})
 def fetch_10k_filing():
     data = request.json
     if not data or "cik" not in data:
@@ -53,6 +128,32 @@ def fetch_10k_filing():
 
 # Route to combine data and provide analysis
 @app.route("/company_analysis", methods=["POST"])
+@swag_from({
+    "responses": {
+        200: {
+            "description": "JSON response with analysis and financial data",
+        },
+        400: {
+            "description": "Bad request (missing or invalid parameters)",
+        },
+    },
+    "parameters": [
+        {
+            "name": "symbol",
+            "in": "body",
+            "type": "string",
+            "required": True,
+            "description": "The stock symbol (e.g., AAPL for Apple Inc.)",
+        },
+        {
+            "name": "cik",
+            "in": "body",
+            "type": "string",
+            "required": True,
+            "description": "The Central Index Key (CIK) for the company",
+        },
+    ],
+})
 def company_analysis():
     data = request.json
     if not data or "symbol" not in data or "cik" not in data:
@@ -101,5 +202,4 @@ def company_analysis():
         return {"error": "Failed to fetch data"}, 400
 
 if __name__ == "__main__":
-    app.run(port=5000)
-
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
