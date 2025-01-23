@@ -11,11 +11,11 @@ swagger_config = {
             "endpoint": "apispec_1",
             "route": "/apispec_1.json",
             "rule_filter": lambda rule: True,
-            "model_filter": lambda tag: True,
+            "model_filter": lambda tag: True
         }
     ],
     "swagger_ui": True,
-    "specs_route": "/swagger/",
+    "specs_route": "/swagger/"
 }
 
 swagger_template = {
@@ -27,7 +27,10 @@ swagger_template = {
     },
     "host": "companyanalysisapi.onrender.com",
     "basePath": "/",
-    "schemes": ["https"]
+    "schemes": ["https"],
+    "servers": [
+        {"url": "https://companyanalysisapi.onrender.com"}
+    ]
 }
 
 Swagger(app, config=swagger_config, template=swagger_template)
@@ -62,7 +65,7 @@ def fetch_live_data():
         return jsonify({"error": "Symbol is required"}), 400
 
     symbol = data["symbol"]
-    ALPHA_VANTAGE_API_KEY = "4PZ9M38DME05M9II"
+    ALPHA_VANTAGE_API_KEY = "4PZ9M38DME05M9II"  # Your real API key
     url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={ALPHA_VANTAGE_API_KEY}"
     response = requests.get(url)
 
